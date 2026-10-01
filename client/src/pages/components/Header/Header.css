@@ -1,0 +1,70 @@
+
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 66px;
+  padding: 0 20px;
+  border-bottom: 1px solid #d8d2c7;
+  background: #fff8e8;
+}
+
+.logo-link,
+.profile-link {
+  display: inline-flex;
+  align-items: center;
+  color: #202020;
+  text-decoration: none;
+}
+
+.app-logo {
+  display: block;
+  width: 150px;
+  height: auto;
+}
+
+.profile-link {
+  padding: 2px;
+}
+
+.profile-link:hover {
+  color: #000000;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.assistant-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: var(--green);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.assistant-btn:hover {
+  background: var(--green-dark);
+}
+
+@media (max-width: 600px) {
+  /* hide the label on small screens, keep just the icon */
+  .assistant-btn span {
+    display: none;
+  }
+
+  .assistant-btn {
+    padding: 0 12px;
+  }
+}
