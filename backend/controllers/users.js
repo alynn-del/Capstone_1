@@ -2,11 +2,32 @@ const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const SECRET = process.env.JWT_SECRET;
 
-module.exports = {
-  signup,
-  login,
-};
 
+async function update(req, res) {
+  try {
+    const updated = await User.findByIdAndUpdate(
+      req.user._id,                 // set by verifyToken
+      { email: req.body.email },    // password stays locked
+      { new: true },
+    );
+    if (!updated) return res.status(404).json({ message: 'User not found.' });
+
+    // reissue token so the frontend reflects the new info
+    const token = jwt.sign({ user: updated }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    res.json({ token });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+}
+
+async function deleteAccount(req, res) {
+  try {
+    await User.findByIdAndDelete(req.user._id);
+    res.json({ message: 'Account deleted.' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+}
 async function signup(req, res) {
   const user = new User(req.body);
   try {
@@ -40,3 +61,10 @@ async function login(req, res) {
 function createJWT(user) {
   return jwt.sign({ user }, SECRET, { expiresIn: "24h" });
 }
+
+module.exports = {
+  signup,
+  login,
+  update,
+  deleteAccount
+};

@@ -13,7 +13,33 @@ type SignupData = {
   username: string;
   password: string;
 };
+function authHeader() {
+  return { headers: { Authorization: `Bearer ${tokenService.getToken()}` } };
+}
 
+async function update(data: { email: string }): Promise<void> {
+  try {
+    const res = await axios.put(BASE_URL, data, authHeader());
+    if (res.data?.token) tokenService.setToken(res.data.token);
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      throw new Error(err.response?.data?.message || 'Unable to save changes.');
+    }
+    throw new Error('Unable to save changes.');
+  }
+}
+
+async function deleteAccount(): Promise<void> {
+  try {
+    await axios.delete(BASE_URL, authHeader());
+    tokenService.removeToken();
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      throw new Error(err.response?.data?.message || 'Unable to delete account.');
+    }
+    throw new Error('Unable to delete account.');
+  }
+}
 
 
 async function signup(user: SignupData): Promise<boolean> {
@@ -71,5 +97,7 @@ export default {
   getUser,
   logout,
   login,
+  update,
+  deleteAccount,
 };
 

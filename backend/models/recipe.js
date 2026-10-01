@@ -15,8 +15,8 @@ const recipeSchema = new mongoose.Schema(
     title: { type: String, required: true },
     description: { type: String },
     image: { type: String },
-    ingredients: [ingredientSchema],
-    instructions: [instructionSchema],
+    ingredients: {type: String, default: "" },
+    instructions: {type: String, default: "" },
     tags: [String],
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,

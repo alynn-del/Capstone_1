@@ -1,5 +1,5 @@
 // filename: App.tsx
-import { useState } from 'react';
+import { useState , useEffect} from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -15,7 +15,11 @@ import SignUpPage from './pages/SignupPage/SignupPage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import Dashboard, { type Recipe } from './pages/Dashboard/Dashboard';
 import RecipeFormPage from './pages/Dashboard/RecipeFormPage';
+import recipeService from './pages/services/recipeService';  
 import Header from './pages/components/Header/Header';
+import RecipeListPage from './pages/Dashboard/RecipeListPage';
+import ProfilePage from './pages/Profile/ProfilePage';
+import RecipeDetailPage from './pages/Dashboard/RecipeDetailPage';
 import { UserProvider, useUser } from './contexts/UserContext';
 import './App.css';
 
@@ -31,7 +35,7 @@ function EditRecipeRoute({
   const recipe = recipes.find((item) => item.id === recipeId);
 
   if (!recipe) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/recipes" replace />;
   }
 
   return (
@@ -40,8 +44,25 @@ function EditRecipeRoute({
       onCancel={() => navigate('/dashboard')}
       onSave={(updatedRecipe) => {
         onSave(updatedRecipe);
-        navigate('/dashboard');
+          navigate('/dashboard', { state: { flash: 'Your recipe was successfully updated.' } });
       }}
+    />
+  );
+}
+function ViewRecipeRoute({ recipes }: { recipes: Recipe[] }) {
+  const navigate = useNavigate();
+  const { recipeId } = useParams();
+  const recipe = recipes.find((item) => item.id === recipeId);
+
+  if (!recipe) {
+    return <Navigate to="/recipes" replace />;
+  }
+
+  return (
+    <RecipeDetailPage
+      recipe={recipe}
+      onHome={() => navigate('/dashboard')}
+      onBackToList={() => navigate('/recipes')}
     />
   );
 }
@@ -56,23 +77,34 @@ function AppRoutes() {
 
   // Dashboard is reachable only after a real login OR an explicit guest choice.
   const canEnter = Boolean(user) || isGuest;
+  
+    useEffect(() => {
+    recipeService.index().then(setRecipes).catch(() => setRecipes([]));
+  }, []);
+
 
   function continueAsGuest() {
     setIsGuest(true);
-    navigate('/dashboard');
+    navigate('/recipes');
   }
 
-  function saveRecipe(recipe: Recipe) {
+    async function saveRecipe(recipe: Recipe) {
+    const isExisting = recipes.some((item) => item.id === recipe.id);
+    const saved = isExisting
+      ? await recipeService.update(recipe)
+      : await recipeService.create(recipe);
+
     setRecipes((currentRecipes) => {
-      const exists = currentRecipes.some((item) => item.id === recipe.id);
+      const exists = currentRecipes.some((item) => item.id === saved.id);
 
       return exists
-        ? currentRecipes.map((item) => (item.id === recipe.id ? recipe : item))
-        : [...currentRecipes, recipe];
+        ? currentRecipes.map((item) => (item.id === saved.id ? saved : item))
+        : [...currentRecipes, saved];
     });
   }
 
-  function deleteRecipe(recipeId: string) {
+  async function deleteRecipe(recipeId: string) {
+    await recipeService.deleteOne(recipeId);
     setRecipes((currentRecipes) =>
       currentRecipes.filter((recipe) => recipe.id !== recipeId),
     );
@@ -95,7 +127,11 @@ function AppRoutes() {
           )
         }
       />
-
+      
+      <Route
+        path="/profile"
+        element={user ? <ProfilePage /> : <Navigate to="/login" replace />}
+      />
       <Route
         path="/signup"
         element={user ? <Navigate to="/dashboard" replace /> : <SignUpPage />}
@@ -111,6 +147,7 @@ function AppRoutes() {
               onCreate={() => navigate('/recipes/create')}
               onDeleteRecipe={deleteRecipe}
               onEdit={(recipe) => navigate(`/recipes/${recipe.id}/edit`)}
+              onBrowse={() => navigate('/recipes')}
               recipes={recipes}
             />
           ) : (
@@ -128,8 +165,24 @@ function AppRoutes() {
               onCancel={() => navigate('/dashboard')}
               onSave={(recipe) => {
                 saveRecipe(recipe);
-                navigate('/dashboard');
+                navigate('/dashboard', { state: { flash: 'Your recipe was successfully created.' } });
               }}
+            />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+
+      {/* Public: anyone (incl. guests) can browse all recipes */}
+      <Route
+        path="/recipes"
+        element={
+          canEnter ? (
+            <RecipeListPage
+              recipes={recipes}
+              onHome={() => navigate('/dashboard')}
+              onViewRecipe={(recipe) => navigate(`/recipes/${recipe.id}`)}
             />
           ) : (
             <Navigate to="/login" replace />
@@ -149,6 +202,17 @@ function AppRoutes() {
         }
       />
 
+      {/* Public: view a single recipe's full contents */}
+      <Route
+        path="/recipes/:recipeId"
+        element={
+          canEnter ? (
+            <ViewRecipeRoute recipes={recipes} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
       <Route
         path="/ai-assistant"
         element={<AIAssistant />} 

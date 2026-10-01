@@ -1,6 +1,6 @@
 
-
-import { useState, type MouseEvent, type ReactNode } from 'react';
+import { useState, useEffect, type MouseEvent, type ReactNode } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 
 export type Recipe = {
@@ -18,6 +18,7 @@ type DashboardProps = {
   isLoggedIn: boolean;
   onCreate: () => void;
   onEdit: (recipe: Recipe) => void;
+  onBrowse: () => void;
   onDeleteRecipe: (recipeId: string) => void;
 };
 
@@ -49,25 +50,14 @@ type RecipeCardProps = {
   onDelete: (recipe: Recipe) => void;
 };
 
-function RecipeCard({
-  recipe,
-  isLoggedIn,
-  onEdit,
-  onDelete,
-}: RecipeCardProps) {
+function RecipeCard({ recipe, isLoggedIn, onEdit, onDelete }: RecipeCardProps) {
   return (
     <article className="recipe-card">
-      <img
-        className="recipe-image"
-        src={recipe.image}
-        alt={recipe.title}
-      />
+      <img className="recipe-image" src={recipe.image} alt={recipe.title} />
 
       <div className="recipe-card-content">
         <h2>{recipe.title}</h2>
-        <p className="recipe-date">
-          Created on {formatDate(recipe.createdAt)}
-        </p>
+        <p className="recipe-date">Created on {formatDate(recipe.createdAt)}</p>
 
         <div className="recipe-tags">
           {recipe.tags.map((tag) => (
@@ -108,23 +98,50 @@ export default function Dashboard({
   isLoggedIn,
   onCreate,
   onEdit,
+  onBrowse,
   onDeleteRecipe,
 }: DashboardProps) {
   const [deleteTarget, setDeleteTarget] = useState<Recipe | null>(null);
+  const [flash, setFlash] = useState('');
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // show the "created" message passed in via navigation from RecipeFormPage
+  useEffect(() => {
+    const message = (location.state as { flash?: string } | null)?.flash;
+    if (message) {
+      setFlash(message);
+      navigate(location.pathname, { replace: true, state: null }); // clear so it won't reshow on refresh
+    }
+  }, [location, navigate]);
+
+  // auto-hide any flash after 4s
+  useEffect(() => {
+    if (!flash) return;
+    const timer = setTimeout(() => setFlash(''), 4000);
+    return () => clearTimeout(timer);
+  }, [flash]);
 
   function confirmDelete() {
     if (!deleteTarget) return;
 
     onDeleteRecipe(deleteTarget.id);
     setDeleteTarget(null);
+    setFlash('Your recipe was successfully deleted.'); // delete is inline, set directly
   }
 
   return (
     <main className="dashboard-page">
       <section className="dashboard-content">
+        {flash && (
+          <div className="flash-message" role="status">
+            {flash}
+          </div>
+        )}
+
         <p className="welcome-message">
-          {isLoggedIn
-            ? 'Welcome back! Manage your recipes or add a new one.':""}
+          {isLoggedIn ? 'Welcome back! Manage your recipes or add a new one.' : ''}
         </p>
 
         <h1>{isLoggedIn ? 'Your Recipes' : 'Recipes'}</h1>
@@ -142,14 +159,28 @@ export default function Dashboard({
         </div>
 
         {recipes.length === 0 && (
-          <p className="empty-message">No recipes available yet.</p>
+          <p className="empty-message">Your recipes will show up here.</p>
         )}
 
-        {isLoggedIn && (
-          <button className="primary-button create-button" onClick={onCreate} type="button">
-            Create Recipe
+        <div className="dashboard-buttons">
+          {isLoggedIn && (
+            <button
+              className="primary-button create-button"
+              onClick={onCreate}
+              type="button"
+            >
+              Create Recipe
+            </button>
+          )}
+
+          <button
+            className="secondary-button browse-button"
+            onClick={onBrowse}
+            type="button"
+          >
+            Browse Recipes
           </button>
-        )}
+        </div>
       </section>
 
       {deleteTarget && (
