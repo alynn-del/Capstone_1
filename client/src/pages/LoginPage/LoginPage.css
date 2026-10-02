@@ -41,6 +41,7 @@
   display: flex;
   flex-direction: column;
   margin-bottom: 18px;
+  align-items: stretch; 
 }
 
 /* bare <label> elements inside the form */
@@ -50,6 +51,7 @@
   color: var(--muted);
   font-size: 19px;
   font-weight: 700;
+  text-align:left;
 }
 
 .login-input {
@@ -76,7 +78,7 @@
 }
 
 .password-label-row label {
-  margin-bottom: 7px;
+  margin-bottom: 1px;
 }
 
 .forgot-link {
@@ -84,6 +86,7 @@
   font-size: 13px;
   font-weight: 700;
   text-decoration: none;
+  align-self: flex-end;      
 }
 
 .login-btn,
@@ -169,7 +172,7 @@
 
 .auth-logo {
   display: block;
-  width: 200px;
+  width: 150px;
   height: auto;
   margin: 0 auto 24px;
   object-fit: contain;
@@ -178,4 +181,23 @@
   .explore-link {
     font-size: 15px;
   }
+}
+.field-error {
+  display: block;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  color: #da291c;
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+/* Highlight invalid inputs */
+.login-input[aria-invalid="true"] {
+  border-color: #da291c;
+}
+
+.login-input[aria-invalid="true"]:focus {
+  outline: none;
+  border-color: #da291c;
+  box-shadow: 0 0 0 2px rgba(218, 41, 28, 0.2);
 }

@@ -69,44 +69,62 @@ function ViewRecipeRoute({ recipes }: { recipes: Recipe[] }) {
 function AppRoutes() {
   const { user } = useUser();
   const navigate = useNavigate();
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+
+  // Two separate lists: the user's own (Dashboard) and everyone's (Browse + lookups).
+  const [myRecipes, setMyRecipes] = useState<Recipe[]>([]);
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
 
   // Guest = user made an explicit "continue as guest" choice on the login page.
   const [isGuest, setIsGuest] = useState(false);
 
   // Dashboard is reachable only after a real login OR an explicit guest choice.
   const canEnter = Boolean(user) || isGuest;
-  
-    useEffect(() => {
-    recipeService.index().then(setRecipes).catch(() => setRecipes([]));
+
+  // Always load the full list (Browse + detail/edit lookups work for any recipe).
+  useEffect(() => {
+    recipeService.index().then(setAllRecipes).catch(() => setAllRecipes([]));
   }, []);
 
+  // Load the user's own recipes only when logged in; clear them on logout.
+  useEffect(() => {
+    if (!user) {
+      setMyRecipes([]);
+      return;
+    }
+    recipeService
+      .index({ mine: true })
+      .then(setMyRecipes)
+      .catch(() => setMyRecipes([]));
+  }, [user]);
 
   function continueAsGuest() {
     setIsGuest(true);
     navigate('/recipes');
   }
 
-    async function saveRecipe(recipe: Recipe) {
-    const isExisting = recipes.some((item) => item.id === recipe.id);
+  async function saveRecipe(recipe: Recipe) {
+    const isExisting = allRecipes.some((item) => item.id === recipe.id);
     const saved = isExisting
       ? await recipeService.update(recipe)
       : await recipeService.create(recipe);
 
-    setRecipes((currentRecipes) => {
-      const exists = currentRecipes.some((item) => item.id === saved.id);
-
+    // Keep both lists in sync.
+    const upsert = (list: Recipe[]) => {
+      const exists = list.some((item) => item.id === saved.id);
       return exists
-        ? currentRecipes.map((item) => (item.id === saved.id ? saved : item))
-        : [...currentRecipes, saved];
-    });
+        ? list.map((item) => (item.id === saved.id ? saved : item))
+        : [...list, saved];
+    };
+
+    setAllRecipes(upsert);
+    setMyRecipes(upsert); // a created/edited recipe is the current user's own
   }
 
   async function deleteRecipe(recipeId: string) {
     await recipeService.deleteOne(recipeId);
-    setRecipes((currentRecipes) =>
-      currentRecipes.filter((recipe) => recipe.id !== recipeId),
-    );
+    const remove = (list: Recipe[]) => list.filter((r) => r.id !== recipeId);
+    setAllRecipes(remove);
+    setMyRecipes(remove);
   }
 
   return (
@@ -126,7 +144,7 @@ function AppRoutes() {
           )
         }
       />
-      
+
       <Route
         path="/profile"
         element={user ? <ProfilePage /> : <Navigate to="/login" replace />}
@@ -136,7 +154,7 @@ function AppRoutes() {
         element={user ? <Navigate to="/dashboard" replace /> : <SignUpPage />}
       />
 
-      {/* Gated: requires a logged-in user OR an explicit guest choice */}
+      {/* Gated: logged-in users see THEIR recipes; guests see all (they own none) */}
       <Route
         path="/dashboard"
         element={
@@ -147,7 +165,7 @@ function AppRoutes() {
               onDeleteRecipe={deleteRecipe}
               onEdit={(recipe) => navigate(`/recipes/${recipe.id}/edit`)}
               onBrowse={() => navigate('/recipes')}
-              recipes={recipes}
+              recipes={user ? myRecipes : allRecipes}
             />
           ) : (
             <Navigate to="/login" replace />
@@ -173,13 +191,13 @@ function AppRoutes() {
         }
       />
 
-      {/* Public: anyone (incl. guests) can browse all recipes */}
+      {/* Public: anyone (incl. guests) can browse ALL recipes */}
       <Route
         path="/recipes"
         element={
           canEnter ? (
             <RecipeListPage
-              recipes={recipes}
+              recipes={allRecipes}
               onHome={() => navigate('/dashboard')}
               onViewRecipe={(recipe) => navigate(`/recipes/${recipe.id}`)}
             />
@@ -194,28 +212,25 @@ function AppRoutes() {
         path="/recipes/:recipeId/edit"
         element={
           user ? (
-            <EditRecipeRoute recipes={recipes} onSave={saveRecipe} />
+            <EditRecipeRoute recipes={allRecipes} onSave={saveRecipe} />
           ) : (
             <Navigate to="/login" replace />
           )
         }
       />
 
-      {/* Public: view a single recipe's full contents */}
+      {/* Public: view a single recipe's full contents (look up in the full list) */}
       <Route
         path="/recipes/:recipeId"
         element={
           canEnter ? (
-            <ViewRecipeRoute recipes={recipes} />
+            <ViewRecipeRoute recipes={allRecipes} />
           ) : (
             <Navigate to="/login" replace />
           )
         }
       />
-      <Route
-        path="/ai-assistant"
-        element={<AIAssistant />} 
-      />
+      <Route path="/ai-assistant" element={<AIAssistant />} />
 
       <Route
         path="*"

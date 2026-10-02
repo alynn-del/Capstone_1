@@ -46,7 +46,7 @@ async function deleteInstruction(req, res) {
     if (recipe.ownerId.toString() !== req.user._id) {
       return res.status(403).json({ message: "Unauthorized" });
     }
-    recipe.instructions.id(req.params.instructionId).remove();
+    recipe.instructions.pull(req.params.instructionId);
     await recipe.save();
     res.json({ message: "Deleted Instruction" });
   } catch (err) {
@@ -64,10 +64,12 @@ async function create(req, res) {
 }
 
 async function getAll(req, res) {
-  console.log("Hello");
   try {
-    const { title, tag, ingredient } = req.query;
-    const query = {};
+    const { title, tag, ingredient , mine} = req.query;
+    const query = { }; 
+     if (mine == "true") {
+      query.ownerId = req.user._id;
+    }
     if (title) {
       query.title = { $regex: title, $options: "i" };
     }
@@ -77,6 +79,7 @@ async function getAll(req, res) {
     if (ingredient) {
       query["ingredients.name"] = ingredient;
     }
+   
     const recipes = await Recipe.find(query);
     res.json(recipes);
   } catch (err) {

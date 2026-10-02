@@ -112,13 +112,15 @@ function AIAssistant() {
       <div className="assistant-container">
         <h1 className="assistant-title">Content Generation AI Assistant</h1>
         <p className="assistant-subtitle">
-          Ask for recipe ideas, ingredient substitutions, cooking tips, or help
-          writing recipe content.
+           Ask a cooking question, or get recipe ideas, ingredient substitutions,
+            cooking tips, and help writing recipe content.
         </p>
-
+        <p className="assistant-hint">
+  Try: "What can I substitute for eggs?" , "Give me a quick lunch idea"
+</p>
         <form className="assistant-form" onSubmit={handleSubmit}>
           <label className="assistant-label" htmlFor="prompt">
-            Your prompt
+            Ask a question or enter a prompt
           </label>
 
           <textarea
@@ -126,7 +128,7 @@ function AIAssistant() {
             className="assistant-textarea"
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
-            placeholder="Ask something..."
+            placeholder="e.g. How do I make this spicier? or Give me a vegan dinner idea"
             rows={5}
             disabled={isLoading}
           />

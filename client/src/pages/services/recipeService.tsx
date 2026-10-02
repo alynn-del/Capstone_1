@@ -1,7 +1,7 @@
-import type { Recipe } from '../Dashboard/Dashboard';  
-import tokenService from '../../utils/tokenService';               
+import type { Recipe } from '../Dashboard/Dashboard';
+import tokenService from '../../utils/tokenService';
 
-const BASE_URL = '/api/recipes'; 
+const BASE_URL = '/api/recipes';
 
 type RecipeFromApi = Omit<Recipe, 'id'> & { _id: string };
 
@@ -17,12 +17,18 @@ function authHeaders(): Record<string, string> {
 }
 
 function toPayload(recipe: Recipe) {
-  const { id, ...rest } = recipe;  
+  const { id, ...rest } = recipe;
   return rest;
 }
 
-async function index(): Promise<Recipe[]> {
-  const res = await fetch(BASE_URL);
+// mine=true -> only the logged-in user's recipes (Dashboard "Your Recipes")
+// mine=false -> everyone's recipes (Browse)
+async function index(options: { mine?: boolean } = {}): Promise<Recipe[]> {
+  const url = options.mine ? `${BASE_URL}?mine=true` : BASE_URL;
+  const res = await fetch(url, {
+    headers: { ...authHeaders() }, // <-- send the token so the backend knows who's asking
+  });
+  if (!res.ok) throw new Error('Failed to load recipes');
   const data: RecipeFromApi[] = await res.json();
   return data.map(normalize);
 }

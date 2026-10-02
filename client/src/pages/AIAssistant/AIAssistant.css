@@ -192,3 +192,8 @@
     height: 48px;
   }
 }
+.assistant-hint {
+  font-size: 0.875rem;
+  color: var(--green);
+  margin-bottom: 1rem;
+}

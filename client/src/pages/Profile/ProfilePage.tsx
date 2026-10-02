@@ -37,7 +37,7 @@ export default function ProfilePage() {
     await userService.update({ email: username.trim() });
     refreshUser();
     navigate('/dashboard', {
-      state: { flash: 'Your profile was successfully updated.' },
+      state: { flash: 'Your profile info was successfully updated.' },
     });
   } catch (err) {
     console.error('profile save failed:', err); // ← see the real reason in console
