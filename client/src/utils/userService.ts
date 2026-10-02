@@ -10,7 +10,7 @@ type LoginCredentials = {
 };
 
 type SignupData = {
-  username: string;
+  email: string;
   password: string;
 };
 function authHeader() {
@@ -45,7 +45,7 @@ async function deleteAccount(): Promise<void> {
 async function signup(user: SignupData): Promise<boolean> {
   try {
     const response = await axios.post(`${BASE_URL}signup`, {
-      username: user.username.trim(),
+      email: user.email.trim(),
       password: user.password,
     });
 

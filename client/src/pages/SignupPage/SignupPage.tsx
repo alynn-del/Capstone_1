@@ -38,9 +38,12 @@ export default function SignupPage() {
     setError("");
 
     try {
-      await userService.signup(state);
+      await userService.signup({
+        email: state.username.trim(),
+        password: state.password.trim()}
+      );
       await refreshUser();
-      navigate("/");
+      navigate("/dashboard");
     } catch (err: unknown) {
       const message =
         err instanceof Error

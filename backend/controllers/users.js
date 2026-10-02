@@ -6,14 +6,14 @@ const SECRET = process.env.JWT_SECRET;
 async function update(req, res) {
   try {
     const updated = await User.findByIdAndUpdate(
-      req.user._id,                 // set by verifyToken
+      req.user._id,                 
       { email: req.body.email },    // password stays locked
       { new: true },
     );
     if (!updated) return res.status(404).json({ message: 'User not found.' });
 
-    // reissue token so the frontend reflects the new info
-    const token = jwt.sign({ user: updated }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+    const token = createJWT(updated);
     res.json({ token });
   } catch (err) {
     res.status(400).json({ message: err.message });
